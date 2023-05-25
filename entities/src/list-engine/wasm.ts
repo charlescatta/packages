@@ -35,6 +35,14 @@ const mapListModel = (listModel: ListEntityModel): pkg.EntityDefinition => {
   return list_definition
 }
 
+const mapUtterances = (strUtterances: string[][]): pkg.UtteranceArray => {
+  const utterances = fill(
+    new pkg.UtteranceArray(),
+    strUtterances.map((strTokens) => new pkg.Utterance(fill(new pkg.StringArray(), strTokens)))
+  )
+  return utterances
+}
+
 const mapExtractions = (list_extractions: pkg.ExtractionArray): ListEntityExtraction[] => {
   const extractions: ListEntityExtraction[] = []
   for (let i = 0; i < list_extractions.len(); i++) {
@@ -59,13 +67,30 @@ const mapExtractions = (list_extractions: pkg.ExtractionArray): ListEntityExtrac
 export const extractForListModel = (strTokens: string[], listModel: ListEntityModel): ListEntityExtraction[] => {
   const str_tokens = fill(new pkg.StringArray(), strTokens)
   const list_definition = mapListModel(listModel)
-  const list_extractions = pkg.extract_single(str_tokens, list_definition)
+  const list_extractions = pkg.extract_single(new pkg.Utterance(str_tokens), list_definition)
   return mapExtractions(list_extractions)
 }
 
 export const extractForListModels = (strTokens: string[], listModels: ListEntityModel[]): ListEntityExtraction[] => {
   const str_tokens = fill(new pkg.StringArray(), strTokens)
   const list_definitions = fill(new pkg.EntityArray(), listModels.map(mapListModel))
-  const list_extractions = pkg.extract_multiple(str_tokens, list_definitions)
+  const list_extractions = pkg.extract_multiple(new pkg.Utterance(str_tokens), list_definitions)
   return mapExtractions(list_extractions)
+}
+
+export const extractBatch = (strUtterances: string[][], listModels: ListEntityModel[]): ListEntityExtraction[][] => {
+  const utterances = mapUtterances(strUtterances)
+  const list_definitions = fill(new pkg.EntityArray(), listModels.map(mapListModel))
+
+  const list_extractions = pkg.extract_batch(utterances, list_definitions)
+
+  const listExtractions: ListEntityExtraction[][] = []
+  for (let i = 0; i < list_extractions.len(); i++) {
+    const batch = list_extractions.get(i)
+    const extractionBatch = mapExtractions(batch.extractions)
+    listExtractions.push(extractionBatch)
+    batch.free()
+  }
+
+  return listExtractions
 }

@@ -93,6 +93,25 @@ pub struct EntityExtraction {
 }
 
 #[derive(Clone)]
+#[wasm_bindgen(getter_with_clone)]
+pub struct EntityExtractionBatch {
+    pub extractions: ExtractionArray,
+}
+
+#[derive(Clone)]
+#[wasm_bindgen]
+pub struct Utterance {
+    tokens: StringArray,
+}
+#[wasm_bindgen]
+impl Utterance {
+    #[wasm_bindgen(constructor)]
+    pub fn new(tokens: StringArray) -> Self {
+        Self { tokens }
+    }
+}
+
+#[derive(Clone)]
 #[wasm_bindgen]
 pub struct StringArray(Vec<String>);
 #[wasm_bindgen]
@@ -176,6 +195,7 @@ impl EntityArray {
     }
 }
 
+#[derive(Clone)]
 #[wasm_bindgen]
 pub struct ExtractionArray(Vec<EntityExtraction>);
 #[wasm_bindgen]
@@ -192,6 +212,44 @@ impl ExtractionArray {
 impl ExtractionArray {
     pub fn from(vec: Vec<EntityExtraction>) -> ExtractionArray {
         ExtractionArray(vec)
+    }
+}
+
+#[wasm_bindgen]
+pub struct UtteranceArray(Vec<Utterance>);
+#[wasm_bindgen]
+impl UtteranceArray {
+    #[wasm_bindgen(constructor)]
+    pub fn new() -> UtteranceArray {
+        UtteranceArray(Vec::new())
+    }
+    #[wasm_bindgen]
+    pub fn push(&mut self, s: Utterance) {
+        self.0.push(s);
+    }
+}
+impl UtteranceArray {
+    pub fn from(vec: Vec<Utterance>) -> UtteranceArray {
+        UtteranceArray(vec)
+    }
+}
+
+#[wasm_bindgen]
+pub struct ExtractionBatchArray(Vec<EntityExtractionBatch>);
+#[wasm_bindgen]
+impl ExtractionBatchArray {
+    #[wasm_bindgen]
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+    #[wasm_bindgen]
+    pub fn get(&self, idx: usize) -> EntityExtractionBatch {
+        self.0.get(idx).unwrap().clone()
+    }
+}
+impl ExtractionBatchArray {
+    pub fn from(vec: Vec<EntityExtractionBatch>) -> ExtractionBatchArray {
+        ExtractionBatchArray(vec)
     }
 }
 
@@ -387,19 +445,39 @@ fn extract(str_tokens: &StringArray, entity_def: &EntityDefinition) -> Vec<Entit
 }
 
 #[wasm_bindgen]
-pub fn extract_single(str_tokens: StringArray, entity_def: EntityDefinition) -> ExtractionArray {
-    let results = extract(&str_tokens, &entity_def);
+pub fn extract_single(utt: Utterance, entity_def: EntityDefinition) -> ExtractionArray {
+    let results = extract(&utt.tokens, &entity_def);
     ExtractionArray::from(results)
 }
 
 #[wasm_bindgen]
-pub fn extract_multiple(str_tokens: StringArray, entity_defs: EntityArray) -> ExtractionArray {
+pub fn extract_multiple(utt: Utterance, entity_defs: EntityArray) -> ExtractionArray {
     let mut results: Vec<EntityExtraction> = vec![];
 
     for entity_def in entity_defs.0 {
-        let mut entity_results = extract(&str_tokens, &entity_def);
+        let mut entity_results = extract(&utt.tokens, &entity_def);
         results.append(&mut entity_results);
     }
 
     ExtractionArray::from(results)
+}
+
+#[wasm_bindgen]
+pub fn extract_batch(utts: UtteranceArray, entity_defs: EntityArray) -> ExtractionBatchArray {
+    let mut results: Vec<EntityExtractionBatch> = vec![];
+
+    for utt in utts.0 {
+        let mut utt_results: Vec<EntityExtraction> = vec![];
+
+        for entity_def in &entity_defs.0 {
+            let mut entity_results = extract(&utt.tokens, &entity_def);
+            utt_results.append(&mut entity_results);
+        }
+
+        results.push(EntityExtractionBatch {
+            extractions: ExtractionArray::from(utt_results),
+        });
+    }
+
+    ExtractionBatchArray::from(results)
 }

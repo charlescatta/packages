@@ -1,4 +1,4 @@
-import { ListEntityModel, extractForListModels } from './list-engine'
+import { extractBatch } from './list-engine'
 import { spaceTokenizer } from './space-tokenizer'
 
 import * as bench from './benchmarks'
@@ -11,7 +11,7 @@ type Logger = {
 }
 
 let DEBUG: boolean = false
-let ITERATIONS: number = 1
+let ITERATIONS: number = 100
 
 const logger: Logger = {
   debug: (...x) => DEBUG && console.log(...x),
@@ -35,37 +35,36 @@ const chalk = {
   cyanBright: (x: string) => `\x1b[96m${x}\x1b[0m`
 }
 
-const runExtraction = (utt: string, models: ListEntityModel[]): void => {
-  logger.debug(chalk.blueBright(`\n\n${utt}`))
+// const runExtraction = (utt: string, models: ListEntityModel[]): void => {
+//   logger.debug(chalk.blueBright(`\n\n${utt}`))
 
-  const tokens = spaceTokenizer(utt)
-  const output = extractForListModels(tokens, models)
+//   const tokens = spaceTokenizer(utt)
+//   const output = extractForListModels(tokens, models)
 
-  if (!DEBUG) {
-    return
-  }
+//   if (!DEBUG) {
+//     return
+//   }
 
-  for (const { char_start, char_end, source, confidence } of output) {
-    const mapChars = (x: string, c: string) =>
-      x
-        .split('')
-        .map(() => c)
-        .join('')
+//   for (const { char_start, char_end, source, confidence } of output) {
+//     const mapChars = (x: string, c: string) =>
+//       x
+//         .split('')
+//         .map(() => c)
+//         .join('')
 
-    const before = mapChars(utt.slice(0, char_start), '-')
-    const extracted = mapChars(utt.slice(char_start, char_end), '^')
-    const after = mapChars(utt.slice(char_end), '-')
-    logger.debug(`${before}${chalk.green(extracted)}${after}`, `(${confidence.toFixed(2)})`)
-  }
-}
+//     const before = mapChars(utt.slice(0, char_start), '-')
+//     const extracted = mapChars(utt.slice(char_start, char_end), '^')
+//     const after = mapChars(utt.slice(char_end), '-')
+//     logger.debug(`${before}${chalk.green(extracted)}${after}`, `(${confidence.toFixed(2)})`)
+//   }
+// }
 
 const runBenchmark = (benchmark: bench.BenchMark): void => {
   logger.info(`Start benchmark: ${chalk.yellowBright(benchmark.name)} (${ITERATIONS} iterations)`)
   const t0 = Date.now()
   for (let i = 0; i < ITERATIONS; i++) {
-    for (const utt of benchmark.utterances) {
-      runExtraction(utt, benchmark.entities)
-    }
+    const tokenizedUttrances = benchmark.utterances.map(spaceTokenizer)
+    extractBatch(tokenizedUttrances, benchmark.entities)
   }
   const t1 = Date.now()
   logger.info(`Time: ${t1 - t0}ms`)

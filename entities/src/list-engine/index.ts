@@ -13,6 +13,7 @@ type Exports = {
   levenshteinDistance: typeof wasm.levenshteinDistance
   extractForListModel: typeof wasm.extractForListModel
   extractForListModels: typeof wasm.extractForListModels
+  extractBatch: typeof wasm.extractBatch
 }
 
 const wasmExports: Exports = wasm
@@ -38,4 +39,10 @@ export const extractForListModels = (
   listModels: types.ListEntityModel[]
 ): types.ListEntityExtraction[] => {
   return (ENGINE === 'wasm' ? wasmExports : nodeExports).extractForListModels(strTokens, listModels)
+}
+export const extractBatch = (
+  strUtterances: string[][],
+  listModels: types.ListEntityModel[]
+): types.ListEntityExtraction[][] => {
+  return (ENGINE === 'wasm' ? wasmExports : nodeExports).extractBatch(strUtterances, listModels)
 }

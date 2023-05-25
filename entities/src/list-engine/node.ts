@@ -521,3 +521,12 @@ export const extractForListModels = (strTokens: string[], listModels: ListEntity
   }
   return results
 }
+
+export const extractBatch = (strUtterances: string[][], listModels: ListEntityModel[]): ListEntityExtraction[][] => {
+  const results: ListEntityExtraction[][] = []
+  for (const strUtterance of strUtterances) {
+    const newResults = extractForListModels(strUtterance, listModels)
+    results.push(newResults)
+  }
+  return results
+}
