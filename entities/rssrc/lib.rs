@@ -16,13 +16,13 @@ extern crate console_error_panic_hook;
 #[derive(Clone)]
 #[wasm_bindgen]
 pub struct SynonymDefinition {
-    tokens: StringArray,
+    tokens: Vec<String>,
 }
 #[wasm_bindgen]
 impl SynonymDefinition {
     #[wasm_bindgen(constructor)]
     pub fn new(tokens: StringArray) -> Self {
-        Self { tokens }
+        Self { tokens: tokens.x }
     }
 }
 
@@ -30,13 +30,16 @@ impl SynonymDefinition {
 #[wasm_bindgen]
 pub struct ValueDefinition {
     name: String,
-    synonyms: SynonymArray,
+    synonyms: Vec<SynonymDefinition>,
 }
 #[wasm_bindgen]
 impl ValueDefinition {
     #[wasm_bindgen(constructor)]
     pub fn new(name: String, synonyms: SynonymArray) -> Self {
-        Self { name, synonyms }
+        Self {
+            name,
+            synonyms: synonyms.x,
+        }
     }
 }
 
@@ -45,7 +48,7 @@ impl ValueDefinition {
 pub struct EntityDefinition {
     name: String,
     fuzzy: f64,
-    values: ValueArray,
+    values: Vec<ValueDefinition>,
 }
 #[wasm_bindgen]
 impl EntityDefinition {
@@ -54,7 +57,7 @@ impl EntityDefinition {
         Self {
             name,
             fuzzy,
-            values,
+            values: values.x,
         }
     }
 }
@@ -72,104 +75,114 @@ pub struct EntityExtraction {
 
 #[derive(Clone)]
 #[wasm_bindgen]
-pub struct StringArray(Vec<String>);
+pub struct StringArray {
+    x: Vec<String>,
+}
 #[wasm_bindgen]
 impl StringArray {
     #[wasm_bindgen(constructor)]
     pub fn new() -> StringArray {
-        StringArray(Vec::new())
+        StringArray { x: Vec::new() }
     }
 
     #[wasm_bindgen]
     pub fn push(&mut self, s: String) {
-        self.0.push(s);
+        self.x.push(s);
     }
 }
 impl StringArray {
     pub fn from(vec: Vec<String>) -> StringArray {
-        StringArray(vec)
+        StringArray { x: vec }
     }
 }
 
 #[derive(Clone)]
 #[wasm_bindgen]
-pub struct SynonymArray(Vec<SynonymDefinition>);
+pub struct SynonymArray {
+    x: Vec<SynonymDefinition>,
+}
 #[wasm_bindgen]
 impl SynonymArray {
     #[wasm_bindgen(constructor)]
     pub fn new() -> SynonymArray {
-        SynonymArray(Vec::new())
+        SynonymArray { x: Vec::new() }
     }
 
     #[wasm_bindgen]
     pub fn push(&mut self, s: SynonymDefinition) {
-        self.0.push(s);
+        self.x.push(s);
     }
 }
 impl SynonymArray {
     pub fn from(vec: Vec<SynonymDefinition>) -> SynonymArray {
-        SynonymArray(vec)
+        SynonymArray { x: vec }
     }
 }
 
 #[derive(Clone)]
 #[wasm_bindgen]
-pub struct ValueArray(Vec<ValueDefinition>);
+pub struct ValueArray {
+    x: Vec<ValueDefinition>,
+}
 #[wasm_bindgen]
 impl ValueArray {
     #[wasm_bindgen(constructor)]
     pub fn new() -> ValueArray {
-        ValueArray(Vec::new())
+        ValueArray { x: Vec::new() }
     }
 
     #[wasm_bindgen]
     pub fn push(&mut self, s: ValueDefinition) {
-        self.0.push(s);
+        self.x.push(s);
     }
 }
 impl ValueArray {
     pub fn from(vec: Vec<ValueDefinition>) -> ValueArray {
-        ValueArray(vec)
+        ValueArray { x: vec }
     }
 }
 
 #[derive(Clone)]
 #[wasm_bindgen]
-pub struct EntityArray(Vec<EntityDefinition>);
+pub struct EntityArray {
+    x: Vec<EntityDefinition>,
+}
 #[wasm_bindgen]
 impl EntityArray {
     #[wasm_bindgen(constructor)]
     pub fn new() -> EntityArray {
-        EntityArray(Vec::new())
+        EntityArray { x: Vec::new() }
     }
 
     #[wasm_bindgen]
     pub fn push(&mut self, s: EntityDefinition) {
-        self.0.push(s);
+        self.x.push(s);
     }
 }
 impl EntityArray {
     pub fn from(vec: Vec<EntityDefinition>) -> EntityArray {
-        EntityArray(vec)
+        EntityArray { x: vec }
     }
 }
 
 #[wasm_bindgen]
-pub struct ExtractionArray(Vec<EntityExtraction>);
+pub struct ExtractionArray {
+    x: Vec<EntityExtraction>,
+}
 #[wasm_bindgen]
 impl ExtractionArray {
     #[wasm_bindgen]
     pub fn get(&self, idx: usize) -> EntityExtraction {
-        self.0.get(idx).unwrap().clone()
+        self.x.get(idx).unwrap().clone()
     }
     #[wasm_bindgen]
     pub fn len(&self) -> usize {
-        self.0.len()
+        self.x.len()
     }
 }
 impl ExtractionArray {
     pub fn from(vec: Vec<EntityExtraction>) -> ExtractionArray {
-        ExtractionArray(vec)
+        ExtractionArray { x: vec }
     }
 }
 
@@ -263,21 +276,20 @@ fn extract_synonym(tokens: &[tokens::Token], synonym: &FlatSynonym) -> Vec<Candi
 fn flatten_synonyms(list_model: &EntityDefinition) -> Vec<FlatSynonym> {
     let mut flattened: Vec<FlatSynonym> = vec![];
 
-    for value in list_model.values.0.iter() {
+    for value in list_model.values.iter() {
         let max_synonym_len: usize = value
             .synonyms
-            .0
             .iter()
-            .map(|s| s.tokens.0.join("").len())
+            .map(|s| s.tokens.join("").len())
             .max()
             .unwrap_or(0);
 
-        for synonym in value.synonyms.0.iter() {
+        for synonym in value.synonyms.iter() {
             flattened.push(FlatSynonym {
                 name: list_model.name.clone(),
                 fuzzy: list_model.fuzzy,
                 value: value.name.clone(),
-                tokens: synonym.tokens.0.clone(),
+                tokens: synonym.tokens.clone(),
                 max_synonym_len: max_synonym_len,
             });
         }
@@ -286,8 +298,8 @@ fn flatten_synonyms(list_model: &EntityDefinition) -> Vec<FlatSynonym> {
     flattened
 }
 
-fn extract(str_tokens: &StringArray, entity_def: &EntityDefinition) -> Vec<EntityExtraction> {
-    let utt_tokens = tokens::to_tokens(&str_tokens.0);
+fn extract(str_tokens: &Vec<String>, entity_def: &EntityDefinition) -> Vec<EntityExtraction> {
+    let utt_tokens = tokens::to_tokens(&str_tokens);
 
     let synonyms: Vec<FlatSynonym> = flatten_synonyms(entity_def);
 
@@ -369,20 +381,20 @@ fn init() {
 }
 
 #[wasm_bindgen]
-pub fn extract_single(str_tokens: StringArray, entity_def: EntityDefinition) -> ExtractionArray {
+pub fn extract_single(str_tokens: &StringArray, entity_def: &EntityDefinition) -> ExtractionArray {
     init();
-    let results = extract(&str_tokens, &entity_def);
+    let results = extract(&str_tokens.x, &entity_def);
     ExtractionArray::from(results)
 }
 
 #[wasm_bindgen]
-pub fn extract_multiple(str_tokens: StringArray, entity_defs: EntityArray) -> ExtractionArray {
+pub fn extract_multiple(str_tokens: &StringArray, entity_defs: &EntityArray) -> ExtractionArray {
     init();
 
     let mut results: Vec<EntityExtraction> = vec![];
 
-    for entity_def in entity_defs.0 {
-        let mut entity_results = extract(&str_tokens, &entity_def);
+    for entity_def in &entity_defs.x {
+        let mut entity_results = extract(&str_tokens.x, entity_def);
         results.append(&mut entity_results);
     }
 
