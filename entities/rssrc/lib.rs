@@ -376,21 +376,14 @@ fn extract(str_tokens: &Vec<String>, entity_def: &EntityDefinition) -> Vec<Entit
     results
 }
 
-fn init() {
-    console_error_panic_hook::set_once();
-}
-
 #[wasm_bindgen]
 pub fn extract_single(str_tokens: &StringArray, entity_def: &EntityDefinition) -> ExtractionArray {
-    init();
     let results = extract(&str_tokens.x, &entity_def);
     ExtractionArray::from(results)
 }
 
 #[wasm_bindgen]
 pub fn extract_multiple(str_tokens: &StringArray, entity_defs: &EntityArray) -> ExtractionArray {
-    init();
-
     let mut results: Vec<EntityExtraction> = vec![];
 
     for entity_def in &entity_defs.x {

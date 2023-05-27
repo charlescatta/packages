@@ -1,6 +1,6 @@
 import * as pkg from '../../../pkg/entities'
 import { ListEntityExtraction, ListEntityDef, ListEntityValue, ListEntitySynonym } from '../typings'
-import { Heap, WasmVec } from './memory'
+import { Heap, WasmStruct, WasmVec } from './memory'
 
 /**
  * IMPORTANT:
@@ -13,15 +13,15 @@ type FromJs = ReturnType<typeof FromJs>
 const FromJs = (heap: Heap) => {
   const mapEntitySynonym = (synonym: ListEntitySynonym): pkg.SynonymDefinition => {
     const wasmTokens = WasmVec.of(heap, pkg.StringArray).fill(synonym.tokens)
-    return heap.allocate(pkg.SynonymDefinition, wasmTokens.x)
+    return WasmStruct.of(heap, pkg.SynonymDefinition, wasmTokens).x
   }
   const mapEntityValue = (value: ListEntityValue): pkg.ValueDefinition => {
-    const wasmSynonyms = WasmVec.of(heap, pkg.SynonymArray).fill(value.synonyms.map(mapEntitySynonym.bind(this)))
-    return heap.allocate(pkg.ValueDefinition, value.name, wasmSynonyms.x)
+    const wasmSynonyms = WasmVec.of(heap, pkg.SynonymArray).fill(value.synonyms.map(mapEntitySynonym))
+    return WasmStruct.of(heap, pkg.ValueDefinition, value.name, wasmSynonyms).x
   }
   const mapEntityDef = (listModel: ListEntityDef): pkg.EntityDefinition => {
-    const wasmValues = WasmVec.of(heap, pkg.ValueArray).fill(listModel.values.map(mapEntityValue.bind(this)))
-    return heap.allocate(pkg.EntityDefinition, listModel.name, listModel.fuzzy, wasmValues.x)
+    const wasmValues = WasmVec.of(heap, pkg.ValueArray).fill(listModel.values.map(mapEntityValue))
+    return WasmStruct.of(heap, pkg.EntityDefinition, listModel.name, listModel.fuzzy, wasmValues).x
   }
   return {
     mapEntitySynonym,
@@ -75,7 +75,7 @@ export const extractForListModels = (strTokens: string[], listDefinitions: ListE
 
   const wasmStrTokens = WasmVec.of(heap, pkg.StringArray).fill(strTokens)
   const wasmListDefinitions = WasmVec.of(heap, pkg.EntityArray).fill(listDefinitions.map(fromJs.mapEntityDef))
-  const wasmListExtractions = pkg.extract_multiple(wasmStrTokens.x, wasmListDefinitions.x)
+  const wasmListExtractions = pkg.extract_multiple(wasmStrTokens, wasmListDefinitions)
 
   // IMPORTANT: free the heap to avoid memory leaks
   heap.free()
