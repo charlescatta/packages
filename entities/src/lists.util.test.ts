@@ -29,10 +29,11 @@ export class ListEntityAssert {
 
   public expectSpans = <T extends string>(templateStr: T) => {
     const { text, spans } = parseSpans(templateStr)
-    const entities = this._extractor.extract(text)
 
     return {
-      toBe: (...expected: EntityExpectations<T>) => {
+      toBe: async (...expected: EntityExpectations<T>) => {
+        const entities = await this._extractor.extract(text)
+
         const cases: [string, number | string, number | string][] = []
         for (let i = 0; i < expected.length; i++) {
           let tag = expected[i] as EntityExpectation

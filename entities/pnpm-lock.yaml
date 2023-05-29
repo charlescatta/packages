@@ -1,6 +1,9 @@
 lockfileVersion: '6.0'
 
 dependencies:
+  browser-or-node:
+    specifier: ^2.1.1
+    version: 2.1.1
   lodash:
     specifier: ^4.17.19
     version: 4.17.21
@@ -960,6 +963,10 @@ packages:
     dependencies:
       fill-range: 7.0.1
     dev: true
+
+  /browser-or-node@2.1.1:
+    resolution: {integrity: sha512-8CVjaLJGuSKMVTxJ2DpBl5XnlNDiT4cQFeuCJJrvJmts9YrTZDizTX7PjC2s6W4x+MBGZeEY6dGMrF04/6Hgqg==}
+    dev: false
 
   /browser-process-hrtime@1.0.0:
     resolution: {integrity: sha512-9o5UecI3GhkpM6DrXr69PblIuWxPKk9Y0jHBRhdocZ2y7YECBFCsHm79Pr3OyR2AvjhDkabFJaDJMYRazHgsow==}

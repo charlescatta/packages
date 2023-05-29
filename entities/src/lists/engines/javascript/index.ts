@@ -181,7 +181,10 @@ export const extractForListModel = (strTokens: string[], listModel: ListEntityMo
   return results
 }
 
-export const extractForListModels = (strTokens: string[], listModels: ListEntityModel[]): ListEntityExtraction[] => {
+export const extractForListModels = async (
+  strTokens: string[],
+  listModels: ListEntityModel[]
+): Promise<ListEntityExtraction[]> => {
   const results: ListEntityExtraction[] = []
   for (const listModel of listModels) {
     const newResults = extractForListModel(strTokens, listModel)

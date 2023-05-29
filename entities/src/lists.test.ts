@@ -44,7 +44,7 @@ describe.each(['wasm', 'javascript'] satisfies ListEntityEngine[])('%s list enti
     test(utt, () => entityAssert.expectSpans(utt).toBe(...tags))
 
   test('Data structure test', async () => {
-    entityAssert.expectSpans('[Blueberries] are berries that are blue').toBe({
+    await entityAssert.expectSpans('[Blueberries] are berries that are blue').toBe({
       source: 'Blueberries',
       qty: 1,
       value: 'Blueberry',
@@ -94,7 +94,7 @@ describe.each(['wasm', 'javascript'] satisfies ListEntityEngine[])('%s list enti
     )
   })
 
-  test('same occurence in multiple entities extracts multiple entities', () => {
+  test('same occurence in multiple entities extracts multiple entities', async () => {
     // arrange
     const testEntities: ListEntityDef[] = [
       ...listEntities,
@@ -114,7 +114,7 @@ describe.each(['wasm', 'javascript'] satisfies ListEntityEngine[])('%s list enti
     const utterance = 'I want to go to New York'
 
     // act
-    const results = extractor.extract(utterance)
+    const results = await extractor.extract(utterance)
 
     // assert
     expect(results.length).toEqual(3)

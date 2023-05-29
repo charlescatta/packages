@@ -1,6 +1,17 @@
-import * as pkg from '../../../../pkg/entities'
+import { isBrowser, isNode } from 'browser-or-node'
+import type * as pkg from '../../../../pkg.node'
 import { ListEntityExtraction, ListEntityModel } from '../typings'
 import { WasmVec } from './wasm-vec'
+
+const resolveEngine = async (): Promise<typeof pkg> => {
+  if (isBrowser && !isNode) {
+    const module = require('../../../../pkg.web')
+    await module.default()
+    return module
+  }
+  return require('../../../../pkg.node')
+}
+let engine: typeof pkg
 
 /**
  * IMPORTANT:
@@ -18,16 +29,16 @@ type Synonym = Value['synonyms'][number]
 
 namespace fromJs {
   export const mapEntitySynonym = (synonym: Synonym): pkg.SynonymDefinition => {
-    const wasmTokens = new WasmVec(pkg.StringArray).fill(synonym.tokens)
-    return new pkg.SynonymDefinition(wasmTokens.x)
+    const wasmTokens = new WasmVec(engine.StringArray).fill(synonym.tokens)
+    return new engine.SynonymDefinition(wasmTokens.x)
   }
   export const mapEntityValue = (value: Value): pkg.ValueDefinition => {
-    const wasmSynonyms = new WasmVec(pkg.SynonymArray).fill(value.synonyms.map(mapEntitySynonym))
-    return new pkg.ValueDefinition(value.name, wasmSynonyms.x)
+    const wasmSynonyms = new WasmVec(engine.SynonymArray).fill(value.synonyms.map(mapEntitySynonym))
+    return new engine.ValueDefinition(value.name, wasmSynonyms.x)
   }
   export const mapEntityModel = (listModel: ListEntityModel): pkg.EntityDefinition => {
-    const wasmValues = new WasmVec(pkg.ValueArray).fill(listModel.values.map(mapEntityValue))
-    return new pkg.EntityDefinition(listModel.name, listModel.fuzzy, wasmValues.x)
+    const wasmValues = new WasmVec(engine.ValueArray).fill(listModel.values.map(mapEntityValue))
+    return new engine.EntityDefinition(listModel.name, listModel.fuzzy, wasmValues.x)
   }
 }
 
@@ -62,13 +73,16 @@ namespace fromRust {
   }
 }
 
-export const extractForListModels = (
+export const extractForListModels = async (
   strTokens: string[],
   listDefinitions: ListEntityModel[]
-): ListEntityExtraction[] => {
-  const wasmStrTokens = new WasmVec(pkg.StringArray).fill(strTokens)
-  const wasmListDefinitions = new WasmVec(pkg.EntityArray).fill(listDefinitions.map(fromJs.mapEntityModel))
-  const wasmListExtractions = pkg.extract_multiple(wasmStrTokens.x, wasmListDefinitions.x)
+): Promise<ListEntityExtraction[]> => {
+  if (!engine) {
+    engine = await resolveEngine()
+  }
+  const wasmStrTokens = new WasmVec(engine.StringArray).fill(strTokens)
+  const wasmListDefinitions = new WasmVec(engine.EntityArray).fill(listDefinitions.map(fromJs.mapEntityModel))
+  const wasmListExtractions = engine.extract_multiple(wasmStrTokens.x, wasmListDefinitions.x)
   const listExtractions = fromRust.mapEntityExtractions(wasmListExtractions)
   return listExtractions
 }

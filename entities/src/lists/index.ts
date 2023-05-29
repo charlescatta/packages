@@ -37,13 +37,12 @@ export class ListEntityExtractor implements EntityExtractor {
     }))
   }
 
-  public extract = (text: string) => {
+  public extract = async (text: string) => {
     const tokens = this._props.tokenizer(text)
 
-    const extractions =
-      this._props.engine === 'wasm'
-        ? wasm.extractForListModels(tokens, this._models)
-        : javascript.extractForListModels(tokens, this._models)
+    const extractions = await (this._props.engine === 'wasm'
+      ? wasm.extractForListModels(tokens, this._models)
+      : javascript.extractForListModels(tokens, this._models))
 
     return extractions.map((x) => ({
       type: 'list' as const,
