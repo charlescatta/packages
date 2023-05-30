@@ -6,7 +6,7 @@ import { Heap, WasmStruct, WasmVec } from './memory'
  * IMPORTANT:
  *
  * - The keyword `new` should *never* be used in this file.
- * - Instead, use `heap.allocate` to create wasm structs.
+ * - Instead, use `WasmStruct` or `WasmVec` to create rust objects.
  */
 
 type FromJs = ReturnType<typeof FromJs>
