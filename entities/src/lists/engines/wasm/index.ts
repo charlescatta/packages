@@ -1,6 +1,13 @@
-import * as pkg from '../../../../pkg/entities'
+import type {
+  SynonymDefinition,
+  ValueDefinition,
+  EntityDefinition,
+  ExtractionArray,
+  EntityExtraction
+} from '../../../../pkg'
 import { ListEntityExtraction, ListEntityModel } from '../typings'
 import { WasmVec } from './wasm-vec'
+import * as pkg from '../../../../pkg'
 
 /**
  * IMPORTANT:
@@ -17,22 +24,22 @@ type Value = Model['values'][number]
 type Synonym = Value['synonyms'][number]
 
 namespace fromJs {
-  export const mapEntitySynonym = (synonym: Synonym): pkg.SynonymDefinition => {
+  export const mapEntitySynonym = (synonym: Synonym): SynonymDefinition => {
     const wasmTokens = new WasmVec(pkg.StringArray).fill(synonym.tokens)
     return new pkg.SynonymDefinition(wasmTokens.x)
   }
-  export const mapEntityValue = (value: Value): pkg.ValueDefinition => {
+  export const mapEntityValue = (value: Value): ValueDefinition => {
     const wasmSynonyms = new WasmVec(pkg.SynonymArray).fill(value.synonyms.map(mapEntitySynonym))
     return new pkg.ValueDefinition(value.name, wasmSynonyms.x)
   }
-  export const mapEntityModel = (listModel: ListEntityModel): pkg.EntityDefinition => {
+  export const mapEntityModel = (listModel: ListEntityModel): EntityDefinition => {
     const wasmValues = new WasmVec(pkg.ValueArray).fill(listModel.values.map(mapEntityValue))
     return new pkg.EntityDefinition(listModel.name, listModel.fuzzy, wasmValues.x)
   }
 }
 
 namespace fromRust {
-  export const mapEntityExtraction = (wasmExtraction: pkg.EntityExtraction): ListEntityExtraction => {
+  export const mapEntityExtraction = (wasmExtraction: EntityExtraction): ListEntityExtraction => {
     const extraction = {
       name: wasmExtraction.name,
       confidence: wasmExtraction.confidence,
@@ -48,7 +55,7 @@ namespace fromRust {
     return extraction
   }
 
-  export const mapEntityExtractions = (listExtractions: pkg.ExtractionArray): ListEntityExtraction[] => {
+  export const mapEntityExtractions = (listExtractions: ExtractionArray): ListEntityExtraction[] => {
     const extractions: ListEntityExtraction[] = []
     for (let i = 0; i < listExtractions.len(); i++) {
       const extraction = listExtractions.get(i)

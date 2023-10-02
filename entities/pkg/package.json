@@ -1,0 +1,20 @@
+{
+  "name": "entities",
+  "collaborators": [
+    "Francois Levasseur <francois.levasseur@botpress.com>"
+  ],
+  "version": "0.1.0",
+  "files": [
+    "./node/entities_bg.wasm",
+    "./node/entities.js",
+    "./node/entities.d.ts",
+    "./web/entities_bg.wasm",
+    "./web/entities.js"
+  ],
+  "main": "./node/entities.js",
+  "types": "./node/entities.d.ts",
+  "browser": {
+    "./node/entities_bg.wasm": "./web/entities_bg.wasm",
+    "./node/entities.js": "./web/entities.js"
+  }
+}
